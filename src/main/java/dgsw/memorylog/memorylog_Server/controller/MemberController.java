@@ -50,6 +50,7 @@ public class MemberController {
             data.put("idx", member.getIdx());
             data.put("name", member.getName());
             data.put("email", member.getEmail());
+            data.put("profileImage", member.getProfileImage());
             return new ResponseData(HttpStatus.OK, "내 정보 받기 성공.", data);
         } catch (HttpClientErrorException e) {
             throw e;
@@ -67,6 +68,7 @@ public class MemberController {
             Map<String, Object> data = new HashMap<String, Object>();
             data.put("idx", member.getIdx());
             data.put("name", member.getName());
+            data.put("profileImage", member.getProfileImage());
             return new ResponseData(HttpStatus.OK, "정보 받기 성공.", data);
         } catch (HttpClientErrorException e) {
             throw e;

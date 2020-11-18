@@ -39,4 +39,4 @@ out/
 src/main/resources/application.properties
 
 ### Uploaded Image
-src/main/resources/static/
+static/

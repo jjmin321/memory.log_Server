@@ -1,6 +1,8 @@
 package dgsw.memorylog.memorylog_Server.domain.vo.paperComment;
 
+import dgsw.memorylog.memorylog_Server.domain.entity.Member;
 import lombok.Getter;
+import lombok.Setter;
 
 import javax.validation.constraints.NotNull;
 

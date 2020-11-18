@@ -1,13 +1,17 @@
 package dgsw.memorylog.memorylog_Server.service.Paper;
 
+import dgsw.memorylog.memorylog_Server.domain.entity.Member;
 import dgsw.memorylog.memorylog_Server.domain.entity.Paper;
 import dgsw.memorylog.memorylog_Server.domain.entity.PaperLike;
 import dgsw.memorylog.memorylog_Server.domain.repository.PaperLikeRepository;
+import dgsw.memorylog.memorylog_Server.domain.vo.paper.PaperHitPaperVo;
 import dgsw.memorylog.memorylog_Server.domain.vo.paper.PaperUpdateLikeVo;
 import dgsw.memorylog.memorylog_Server.enums.UserLike;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import javax.servlet.http.HttpServletRequest;
 
 @Service
 public class PaperLikeServiceImpl implements PaperLikeService{
@@ -75,6 +79,31 @@ public class PaperLikeServiceImpl implements PaperLikeService{
             paperLikeRepo.deleteByPaperIdxAndMemberIdx(
                         paperUpdateLikeVo.getPaper().getIdx(),
                         paperUpdateLikeVo.getMember().getIdx());
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    /**
+     * 좋아요 여부
+     * @param paperHitPaperVo
+     * @param request
+     * @return true / false
+     */
+    @Override
+    public boolean getIsLike(PaperHitPaperVo paperHitPaperVo, HttpServletRequest request) {
+        try {
+            if (request.getAttribute("member") == null) {
+                return false;
+            }
+
+            Member member = (Member) request.getAttribute("member");
+
+            Integer isLike = paperLikeRepo.countByPaperIdxAndMemberIdx(
+                    paperHitPaperVo.getIdx(),
+                    member.getIdx());
+
+            return isLike == 1;
         } catch (Exception e) {
             throw e;
         }

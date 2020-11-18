@@ -38,7 +38,7 @@ public class Paper {
     @Column()
     private String thumbnail;
 
-    @Column()
+    @Column(columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     @JsonProperty("end_time")
     private LocalDateTime endTime;
 
@@ -48,7 +48,7 @@ public class Paper {
     private Date createdAt = new Date();
 
     @UpdateTimestamp()
-    @Column()
+    @Column(columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     @JsonProperty("updated_at")
     private Date updatedAt;
 }

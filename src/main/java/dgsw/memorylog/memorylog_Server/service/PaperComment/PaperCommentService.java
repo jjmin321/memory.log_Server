@@ -10,6 +10,7 @@ import java.util.List;
 public interface PaperCommentService {
     public void createPaperComment(Member member, PaperCommentCreateVo paperCommentCreateVo);
     public List<PaperComment> getPaperComments(Integer paperIdx);
+    public PaperComment getPaperComment(Member member, Integer commentIdx);
     public void editPaperComment(Member member, Integer paperCommentIdx, PaperCommentModifyVo paperCommentModifyVo);
     public void deletePaperComment(Member member, Integer paperCommentIdx);
 }

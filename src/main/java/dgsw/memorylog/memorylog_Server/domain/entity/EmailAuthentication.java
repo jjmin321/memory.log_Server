@@ -20,7 +20,7 @@ public class EmailAuthentication {
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+   @Column(columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP", nullable = false)
     @JsonProperty("expire_time")
     private Date expireTime;
 

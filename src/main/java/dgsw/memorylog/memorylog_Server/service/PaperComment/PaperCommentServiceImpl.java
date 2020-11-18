@@ -44,14 +44,21 @@ public class PaperCommentServiceImpl implements PaperCommentService {
             }
 
             Paper paper = paperRepo.findByIdx(paperCommentCreateVo.getPaperIdx());
-            if ((paper.getEndTime() != null && paper.getEndTime().isAfter(LocalDateTime.now())) || paper.getScope() == PaperScope.PRIVATE) {
+
+            if ((paper.getEndTime() != null && paper.getEndTime().isBefore(LocalDateTime.now())) || paper.getScope() == PaperScope.PRIVATE) {
                 throw new HttpClientErrorException(HttpStatus.FORBIDDEN, "권한 없음.");
             }
 
-            ModelMapper modelMapper = new ModelMapper();
-            PaperComment mappedPaper = modelMapper.map(paperCommentCreateVo, PaperComment.class);
-            mappedPaper.setMember(member);
-            paperCommentRepo.save(mappedPaper);
+            PaperComment paperComment = new PaperComment();
+            paperComment.setMember(member);
+            paperComment.setPaper(paper);
+            paperComment.setImage(paperCommentCreateVo.getImage());
+            paperComment.setComment(paperCommentCreateVo.getComment());
+            paperComment.setColor(paperCommentCreateVo.getColor());
+            paperComment.setFontFamily(paperCommentCreateVo.getFontFamily());
+            paperComment.setLocationX(paperCommentCreateVo.getLocationX());
+            paperComment.setLocationY(paperCommentCreateVo.getLocationY());
+            paperCommentRepo.save(paperComment);
         } catch (Exception e) {
             throw e;
         }
@@ -77,6 +84,29 @@ public class PaperCommentServiceImpl implements PaperCommentService {
     }
 
     /**
+     * 코멘트 상세 조회
+     * @param commentIdx
+     * @return PaperComment
+     */
+    @Override
+    public PaperComment getPaperComment(Member member, Integer commentIdx) {
+        try {
+            PaperComment paperComment = paperCommentRepo.findByIdx(commentIdx);
+            if (paperComment == null) {
+                throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "글 없음.");
+            }
+
+            if (!paperComment.getMember().getIdx().equals(member.getIdx())) {
+                throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "인증 안됨.");
+            }
+
+            return paperComment;
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    /**
      * 코멘트 수정
      * @param member
      * @param paperCommentIdx
@@ -89,7 +119,8 @@ public class PaperCommentServiceImpl implements PaperCommentService {
                 throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "코멘트 없음.");
             }
 
-            if (paperComment.getMember() != member || paperComment.getPaper().getEndTime().isAfter(LocalDateTime.now()) ||
+            if (!paperComment.getMember().getIdx().equals(member.getIdx()) || (paperComment.getPaper().getEndTime() != null &&
+                    paperComment.getPaper().getEndTime().isBefore(LocalDateTime.now())) ||
                     paperComment.getPaper().getScope() == PaperScope.PRIVATE) {
                 throw new HttpClientErrorException(HttpStatus.FORBIDDEN, "권한 없음.");
             }
@@ -98,12 +129,14 @@ public class PaperCommentServiceImpl implements PaperCommentService {
                 throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "검증 오류.");
             }
 
-            paperComment.setComment(Optional.ofNullable(paperCommentModifyVo.getComment()).orElse(paperComment.getComment()));
-            paperComment.setLocationX(Optional.ofNullable(paperCommentModifyVo.getLocationX()).orElse(paperComment.getLocationX()));
-            paperComment.setLocationY(Optional.ofNullable(paperCommentModifyVo.getLocationY()).orElse(paperComment.getLocationY()));
-            paperComment.setFontFamily(Optional.ofNullable(paperCommentModifyVo.getFontFamily()).orElse(paperComment.getFontFamily()));
-            paperComment.setImage(Optional.ofNullable(paperCommentModifyVo.getImage()).orElse(paperComment.getImage()));
+            paperComment.setComment(paperCommentModifyVo.getComment());
+            paperComment.setLocationX(paperCommentModifyVo.getLocationX());
+            paperComment.setLocationY(paperCommentModifyVo.getLocationY());
+            paperComment.setFontFamily(paperCommentModifyVo.getFontFamily());
+            paperComment.setImage(paperCommentModifyVo.getImage());
+            paperComment.setColor(paperCommentModifyVo.getColor());
             paperComment.setUpdatedAt(new Date());
+
             paperCommentRepo.save(paperComment);
         } catch (Exception e) {
             throw e;

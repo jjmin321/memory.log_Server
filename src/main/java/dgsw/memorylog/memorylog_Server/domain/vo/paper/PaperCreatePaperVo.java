@@ -25,7 +25,5 @@ public class PaperCreatePaperVo {
 
     private String thumbnail;
 
-    private Member member;
-
     private LocalDateTime endTime;
 }

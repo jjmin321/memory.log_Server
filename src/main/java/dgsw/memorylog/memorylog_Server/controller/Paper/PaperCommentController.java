@@ -56,7 +56,24 @@ public class PaperCommentController {
             List<PaperComment> paperComments = paperCommentService.getPaperComments(paperIdx);
             Map<String, Object> data = new HashMap<String, Object>();
             data.put("paperComments", paperComments);
-            return new ResponseData(HttpStatus.OK, "롤링페이퍼 조회 성공", data);
+            return new ResponseData(HttpStatus.OK, "롤링페이퍼 글 조회 성공", data);
+        } catch (HttpClientErrorException e) {
+            throw e;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류.");
+        }
+    }
+
+    @GetMapping("/showComment/{commentIdx}")
+    public Response getPaperComment(@PathVariable("commentIdx") Integer commentIdx, HttpServletRequest request) {
+        try {
+            authorizationCheck.check(request);
+            Member member = (Member) request.getAttribute("member");
+            PaperComment paperComment = paperCommentService.getPaperComment(member, commentIdx);
+            Map<String, Object> data = new HashMap<String, Object>();
+            data.put("paperComment", paperComment);
+            return new ResponseData(HttpStatus.OK, "롤링페이퍼 글 상세 조회 성공", data);
         } catch (HttpClientErrorException e) {
             throw e;
         } catch (Exception e) {

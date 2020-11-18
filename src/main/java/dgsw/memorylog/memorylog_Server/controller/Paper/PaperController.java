@@ -10,6 +10,7 @@ import dgsw.memorylog.memorylog_Server.domain.vo.paper.PaperModifyPaperVo;
 import dgsw.memorylog.memorylog_Server.enums.PaperScope;
 import dgsw.memorylog.memorylog_Server.lib.AuthorizationCheck;
 import dgsw.memorylog.memorylog_Server.lib.MakeRandomCode;
+import dgsw.memorylog.memorylog_Server.service.Paper.PaperLikeServiceImpl;
 import dgsw.memorylog.memorylog_Server.service.Paper.PaperService;
 import dgsw.memorylog.memorylog_Server.service.Paper.PaperServiceImpl;
 import io.swagger.annotations.Api;
@@ -36,6 +37,9 @@ public class PaperController {
     private PaperServiceImpl paperService;
 
     @Autowired
+    private PaperLikeServiceImpl paperLikeService;
+
+    @Autowired
     private AuthorizationCheck authorizationCheck;
 
     @Autowired
@@ -47,9 +51,8 @@ public class PaperController {
         try {
             authorizationCheck.check(request);
             Member member = (Member)request.getAttribute("member");
-            paperCreatePaperVo.setMember(member);
             paperCreatePaperVo.setCode(makeRandomCode.createCode(6));
-            paperService.createPaper(paperCreatePaperVo);
+            paperService.createPaper(member, paperCreatePaperVo);
             Map<String, Object> data = new HashMap<String, Object>();
             return new Response(HttpStatus.OK, "롤링페이퍼 생성 성공.");
         } catch (HttpClientErrorException e){
@@ -83,7 +86,7 @@ public class PaperController {
         try {
             authorizationCheck.check(request);
             Member member = (Member)request.getAttribute("member");
-            List<Paper> papers = paperService.getMyPaper(member.getName());
+            List<PaperHitPaperVo> papers = paperService.getMyPaper(member.getName());
             Map<String, Object> data = new HashMap<String, Object>();
             data.put("Papers", papers);
             return new ResponseData(HttpStatus.OK, "롤링페이퍼 조회 성공", data);
@@ -97,14 +100,21 @@ public class PaperController {
 
     @GetMapping("/showPaper")
     @ApiOperation(value = "롤링페이퍼 조회")
-    public Response showPaper(@RequestParam(required = false) Integer paper_idx, String code, HttpServletRequest request) {
+    public Response showPaper(@RequestParam(required = false) Integer paper_idx, String code, Boolean hit, HttpServletRequest request) {
         try {
             Map<String, Object> data = new HashMap<String, Object>();
             if (paper_idx == null) {
                 List<PaperHitPaperVo> papers = paperService.showPublicPaper();
+                if (hit != null && hit) {
+                    papers.sort((o1, o2) -> {
+                        if (o1.getLikeCount().equals(o2.getLikeCount()))
+                            return 0;
+                        return o1.getLikeCount() > o2.getLikeCount() ? -1 : 1;
+                    });
+                }
                 data.put("Papers", papers);
             } else {
-                Paper papers = paperService.showOnePaper(paper_idx);
+                PaperHitPaperVo papers = paperService.showOnePaper(paper_idx);
                 switch (papers.getScope()) {
                     case PUBLIC:
                         break;
@@ -121,8 +131,10 @@ public class PaperController {
                             return new Response(HttpStatus.BAD_REQUEST, "이 롤링페이퍼에는 작성자만 접근 하실 수 있습니다.");
                         }
                 }
+                papers.setLike(paperLikeService.getIsLike(papers, request));
                 data.put("Papers", papers);
             }
+
             return new ResponseData(HttpStatus.OK, "롤링페이퍼 조회 성공.", data);
         } catch (NullPointerException e) {
             return new Response(HttpStatus.BAD_REQUEST, "이 롤링페이퍼에 접근하시기 위해서는 접근 코드를 입력하시거나 작성자여야 합니다");
@@ -138,8 +150,8 @@ public class PaperController {
     @ApiOperation(value = "롤링페이퍼 검색")
     public Response searchPaper(@RequestParam @Valid String target) {
         try {
-            List<Paper> searchedByTitle = paperService.searchPaperByTitle(target);
-            List<Paper> searchedByName = paperService.searchPaperByMemberName(target);
+            List<PaperHitPaperVo> searchedByTitle = paperService.searchPaperByTitle(target);
+            List<PaperHitPaperVo> searchedByName = paperService.searchPaperByMemberName(target);
             Map<String, Object> data = new HashMap<String, Object>();
             data.put("SearchedByTitle", searchedByTitle);
             data.put("SearchedByName", searchedByName);

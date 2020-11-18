@@ -1,10 +1,12 @@
 package dgsw.memorylog.memorylog_Server.controller;
 
+import dgsw.memorylog.memorylog_Server.domain.vo.http.Response;
 import dgsw.memorylog.memorylog_Server.domain.vo.http.ResponseData;
 import dgsw.memorylog.memorylog_Server.service.Upload.UploadServiceImpl;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -32,8 +34,12 @@ public class UploadController {
 
     @PostMapping("/")
     @ApiOperation(value = "이미지 업로드")
-    public ResponseData uploadFile(@Valid @RequestParam("file") MultipartFile file) {
+    public Response uploadFile(@RequestParam(value = "file", required = false) MultipartFile file) {
         try {
+            if (file.isEmpty()) {
+                throw new HttpClientErrorException(HttpStatus.BAD_REQUEST, "검증 오류.");
+            }
+
             String fileName = uploadService.storeFile(file);
 
             Map<String, Object> data = new HashMap<String, Object>();

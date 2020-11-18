@@ -21,6 +21,8 @@ public class PaperHitPaperVo {
 
     private String code;
 
+    private boolean isLike;
+
     private Integer likeCount;
 
     private String thumbnail;

@@ -32,11 +32,15 @@ public class PaperServiceImpl implements PaperService{
      * @return 롤링페이퍼 인덱스
      */
     @Override
-    public void createPaper(PaperCreatePaperVo paperCreatePaperVo) {
+    public void createPaper(Member member, PaperCreatePaperVo paperCreatePaperVo) {
         try {
-            ModelMapper modelMapper = new ModelMapper();
-            Paper mappedPaper = modelMapper.map(paperCreatePaperVo, Paper.class);
-            paperRepo.save(mappedPaper);
+            Paper paper = new Paper();
+            paper.setEndTime(paperCreatePaperVo.getEndTime());
+            paper.setScope(paperCreatePaperVo.getScope());
+            paper.setMember(member);
+            paper.setThumbnail(paperCreatePaperVo.getThumbnail());
+            paper.setTitle(paperCreatePaperVo.getTitle());
+            paperRepo.save(paper);
         } catch (Exception e) {
             throw e;
         }
@@ -47,9 +51,11 @@ public class PaperServiceImpl implements PaperService{
      * @return 내 롤링페이퍼 글
      */
     @Override
-    public List<Paper> getMyPaper(String name) {
+    public List<PaperHitPaperVo> getMyPaper(String name) {
         try {
-            return paperRepo.findAllByMember_Name(name);
+            List<Paper> papers = paperRepo.findAllByMember_Name(name);
+
+            return addLikeCount(papers);
         } catch (Exception e) {
             throw e;
         }
@@ -60,9 +66,14 @@ public class PaperServiceImpl implements PaperService{
      * @return 하나의 롤링페이퍼 글
      */
     @Override
-    public Paper showOnePaper(Integer paper_idx) {
+    public PaperHitPaperVo showOnePaper(Integer paper_idx) {
         try {
-            return paperRepo.findByIdx(paper_idx);
+            Paper paper = paperRepo.findByIdx(paper_idx);
+            Integer likeCount = paperLikeRepo.countByPaperIdx(paper.getIdx());
+            ModelMapper modelMapper = new ModelMapper();
+            PaperHitPaperVo mappedPaper = modelMapper.map(paper, PaperHitPaperVo.class);
+            mappedPaper.setLikeCount(likeCount);
+            return mappedPaper;
         } catch (Exception e) {
             throw e;
         }
@@ -73,9 +84,14 @@ public class PaperServiceImpl implements PaperService{
      * @return 공개 범위가 ONLYCODE인 롤링페이퍼 글
      */
     @Override
-    public Paper showOnlyCodePaper(Integer paper_idx, String code) {
+    public PaperHitPaperVo showOnlyCodePaper(Integer paper_idx, String code) {
         try {
-            return paperRepo.findByIdxAndCode(paper_idx, code);
+            Paper paper = paperRepo.findByIdxAndCode(paper_idx, code);
+            Integer likeCount = paperLikeRepo.countByPaperIdx(paper.getIdx());
+            ModelMapper modelMapper = new ModelMapper();
+            PaperHitPaperVo mappedPaper = modelMapper.map(paper, PaperHitPaperVo.class);
+            mappedPaper.setLikeCount(likeCount);
+            return mappedPaper;
         } catch (Exception e) {
             throw e;
         }
@@ -83,27 +99,20 @@ public class PaperServiceImpl implements PaperService{
 
     /**
      * 롤링페이퍼 조회
-     * @return 공개 범위가 PUBLIC인 롤링페이퍼 글 , 좋아요 내림차순 반환
+     * @return 공개 범위가 PUBLIC인 롤링페이퍼 글
      */
     @Override
     public List<PaperHitPaperVo> showPublicPaper() {
         try {
             List<Paper> papers = paperRepo.findAllByScope(PaperScope.PUBLIC);
-            List<PaperHitPaperVo> filteredPaper = new ArrayList<>();
-            for (Paper paper: papers) {
-                Integer likeCount = paperLikeRepo.countByPaperIdx(paper.getIdx());
-                ModelMapper modelMapper = new ModelMapper();
-                PaperHitPaperVo mappedPaper = modelMapper.map(paper, PaperHitPaperVo.class);
-                mappedPaper.setLikeCount(likeCount);
-                filteredPaper.add(mappedPaper);
-            }
 
-            filteredPaper.sort((o1, o2) -> {
-                if (o1.getLikeCount().equals(o2.getLikeCount()))
+            papers.sort((o1, o2) -> {
+                if (o1.getCreatedAt().equals(o2.getCreatedAt()))
                     return 0;
-                return o1.getLikeCount() > o2.getLikeCount() ? -1 : 1;
+                return o1.getCreatedAt().getTime() > o2.getCreatedAt().getTime() ? -1 : 1;
             });
-            return filteredPaper;
+
+            return addLikeCount(papers);
         } catch (Exception e) {
             throw e;
         }
@@ -114,18 +123,22 @@ public class PaperServiceImpl implements PaperService{
      * @return 롤링페이퍼 정보
      */
     @Override
-    public List<Paper> searchPaperByTitle(String title) {
+    public List<PaperHitPaperVo> searchPaperByTitle(String title) {
         try {
-            return paperRepo.findAllByTitleContaining(title);
+            List<Paper> papers = paperRepo.findAllByTitleContaining(title);
+
+            return addLikeCount(papers);
         } catch (Exception e) {
             throw e;
         }
     }
 
     @Override
-    public List<Paper> searchPaperByMemberName(String name) {
+    public List<PaperHitPaperVo> searchPaperByMemberName(String name) {
         try {
-            return paperRepo.findAllByMember_Name(name);
+            List<Paper> papers = paperRepo.findAllByMember_Name(name);
+
+            return addLikeCount(papers);
         } catch (Exception e) {
             throw e;
         }
@@ -159,5 +172,18 @@ public class PaperServiceImpl implements PaperService{
 //        } catch (Exception e) {
 //            throw e;
 //        }
+    }
+
+    @Override
+    public List<PaperHitPaperVo> addLikeCount(List<Paper> papers) {
+        List<PaperHitPaperVo> filteredPaper = new ArrayList<>();
+        for (Paper paper: papers) {
+            Integer likeCount = paperLikeRepo.countByPaperIdx(paper.getIdx());
+            ModelMapper modelMapper = new ModelMapper();
+            PaperHitPaperVo mappedPaper = modelMapper.map(paper, PaperHitPaperVo.class);
+            mappedPaper.setLikeCount(likeCount);
+            filteredPaper.add(mappedPaper);
+        }
+        return filteredPaper;
     }
 }

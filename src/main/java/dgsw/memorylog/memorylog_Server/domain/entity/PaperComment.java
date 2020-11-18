@@ -55,7 +55,7 @@ public class PaperComment {
     private Date createdAt = new Date();
 
     @UpdateTimestamp()
-    @Column()
+    @Column(columnDefinition="TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     @JsonProperty("updated_at")
     private Date updatedAt;
 }
